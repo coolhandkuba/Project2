@@ -1,34 +1,32 @@
-// Requiring necessary npm packages
-const express = require("express");
-const session = require("express-session");
+var express = require("express");
+var bodyParser = require("body-parser");
+var methodOverride = require("method-override");
 
-// Setting up port and requiring models for syncing
-const PORT = process.env.PORT || 8080;
-const db = require("./models");
+var port = process.env.PORT || 8080;
+// var port = 8080;
 
-// Creating express app and configuring middleware needed for authentication
-const app = express();
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static("public"));
-// We need to use sessions to keep track of our user's login status
-app.use(
-  session({ secret: "keyboard cat", resave: true, saveUninitialized: true })
-);
-app.use(passport.initialize());
-app.use(passport.session());
+var app = express();
 
-// Requiring our routes
-require("./routes/html-routes.js")(app);
-require("./routes/api-routes.js")(app);
+// Serve static content for the app from the "public" directory in the application directory.
+// app.use(express.static(process.cwd() + "/public"));
+app.use(express.static(process.cwd() + "/public"));
 
-// Syncing our database and logging a message to the user upon success
-db.sequelize.sync().then(() => {
-  app.listen(PORT, () => {
-    console.log(
-      "==> 🌎  Listening on port %s. Visit http://localhost:%s/ in your browser.",
-      PORT,
-      PORT
-    );
-  });
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// Override with POST having ?_method=DELETE
+app.use(methodOverride("_method"));
+
+// Set Handlebars.
+var exphbs = require("express-handlebars");
+
+app.engine("handlebars", exphbs({ defaultLayout: "main" }));
+app.set("view engine", "handlebars");
+
+// Import routes and give the server access to them.
+var routes = require("./controllers/recipe_controller.js");
+
+app.use("/", routes);
+
+app.listen(port, function() {
+    console.log(`Server running http://localhost:${port}, Ctrl + c to stop`);
 });
